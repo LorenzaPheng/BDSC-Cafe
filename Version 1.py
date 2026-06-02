@@ -1,8 +1,8 @@
 '''BDSC cafe program'''
 '''This is a click and collect program that signs users' in using their
 student ID, collects their orders and allows them to mark their order as completed'''
-
-import sys
+#
+import sys, os 
 
 #Dictionaries
 login_keys = {
@@ -19,7 +19,7 @@ menu_prices = [
 
 #Empty list for users' ordered items
 cart = []
-
+    
 #Empty variable for user id
 user_id = ""
 
@@ -33,19 +33,22 @@ def main_menu():
     print("3. Exit")
 
     while True:
-        choice = int(input("Enter option (1/2/3) : "))
-        if choice == 1:
-            order_menu()
-        if choice == 2:
-            current_orders()
-        if choice == 3:
-            print("\n--------EXITING PROGRAM--------")
-            sys.exit()
-        else:
+        try:
+            choice = int(input("Enter option (1/2/3) : "))
+            if choice == 1:
+                order_menu()
+            elif choice == 2:
+                current_orders()
+            elif choice == 3:
+                print("\n--------EXITING PROGRAM--------")
+                sys.exit()
+        except ValueError:
             print("Invalid option")
+            
         
 #Order menu - Place an order
 def order_menu():
+    global order_number
     print("\n--------ORDER MENU--------")
 
     for index, (item, price) in enumerate(menu_prices, start=1):
@@ -65,20 +68,29 @@ def order_menu():
             print("Successfully added to cart!")
             
         elif ordered_item == 0:
-
+        
             if len(cart) == 0:
                 main_menu()
                 break
             else:
                 print("\nOrder processed!\n")
-                with open("current_orders.txt", "a") as file:
-                    file.write(f"--- BDSC CAFE ORDER ---\n")
+                with open("order_number.txt", "r") as file:
+                    order_number = int(file.read())
+                    
+                with open(f"{user_id}_order_{order_number}.txt", "x") as file:
+                    file.write(f"---BDSC CAFE ORDER {order_number}---\n")
                     file.write(f"Student ID: {user_id}\n")
                     file.write(f"-----------------------\n")
                     file.write(f"Items Ordered:\n")
                     for item in cart:
                         file.write(f"- {item}\n")
                     file.write(f"-----------------------\n\n")
+                    
+                    order_number+=1
+                    with open("order_number.txt", "w") as file:
+                        file.write(str(order_number))
+                cart.clear()
+                
             main_menu()
             break
             
@@ -87,19 +99,41 @@ def order_menu():
 
 #Current orders functions
 def current_orders():
-
-    print("\n--------CURRENT ORDERS--------")
-
-    if len(cart) == 0:
+    
+    #Empty list for users previous orders
+    found_orders = []
+    
+    #Initially, previous orders are not found
+    order_found = False
+    
+    print("\n--------CURRENT ORDERS--------\n")
+    
+    #Find any current orders for the user's id
+    for file_name in os.listdir():
+        if user_id in file_name:
+            with open(file_name, "r") as file:
+                current_order = file.read()
+                found_orders.append(file_name)
+                print(current_order)
+            order_found = True
+            
+    if order_found == False:
         print("No current orders")
-        main_menu()
+            
     else:
-        print(cart)
-        with open("tutor_list.txt","r")as file: 
-            for line in file:
-            line = line.strip()
-        if line != "":
-        main_menu()
+        while True:
+            status = input("Have you recieved your order yet? (Y/N) : ").lower()
+            if status == "y":
+                print("Enjoy!")
+                for file_name in found_orders:
+                    os.remove(file_name)
+                break
+            if status == "n":
+                print("Your order will be ready soon!")
+                break
+            else:
+                print("Enter a valid status (Y/N)") 
+    main_menu()
 
 #Initial menu - Logging in
 def log_in():
