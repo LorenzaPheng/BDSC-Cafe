@@ -17,18 +17,17 @@ menu_prices = [
     ["Sausage roll", "$4"],
     ["Brownie", "$2"]
 ]
-menu_items = ["Chocolate milk", "Sausage roll", "Brownie"]
 
-#Empty list for users' ordered items
-cart = []
-    
-#Empty variable for user id
-user_id = ""
+#Empty dictionary to store the ordered items
+ordered_items = {}
+
+#Empty list for users' previous orders
+orders = []
 
 #Initialise tkinter window
 root = tk.Tk()
 root.title("BDSC cafe")
-root.geometry("400x300")
+root.geometry("500x300")
 
 #Show frame function
 def show_frame(frame):
@@ -96,7 +95,9 @@ loginerror_label.grid(row=4, column=0)
 
 #Login verification process
 def verify_user():
-
+    global user_id
+    #Empty variable for user id
+    user_id = ""
     try:
 
         entered_id = id_entry.get()
@@ -110,6 +111,7 @@ def verify_user():
 
             loginerror_message.set("")
             show_frame(home_frame)
+            user_id = entered_id
 
         else:
 
@@ -127,7 +129,7 @@ order_option = tk.Button(home_frame,
                          command = lambda: show_frame(order_frame))
 currentorder_option = tk.Button(home_frame,
                          text = "View Current orders",
-                         command = lambda: show_frame(order_frame))
+                         command = lambda: view_current_orders())
 
 home_message.grid(row=0, column=0, padx= 50, pady = 20)
 order_option.grid(row=1, column= 0, padx= 50, pady = 20)
@@ -137,14 +139,21 @@ currentorder_option.grid(row=2, column=0 , padx= 50, pady = 20)
 
 #Spinboxes for option selection
 
-for item in menu_items:
+for i, (item, price) in enumerate(menu_prices):
+    #Item labels
     item_label = tk.Label(order_frame,
                           text=item,)
-    item.label.grid(row = i+1, #the row increases for each item
+    item_label.grid(row = i+1, #the row increases for each item
                     column=0,
                     padx=20,
                     pady=5,
                     )
+    #Price labels
+    price_label = tk.Label(order_frame, text=price)
+    price_label.grid(row=i+1,
+                     column=1,
+                     padx=10,
+                     pady=5,)
 
     #Generate spinboxes for menu items
     sb_var = tk.IntVar(value=0) #IntVar carries the value of the spinbox
@@ -153,207 +162,137 @@ for item in menu_items:
                               width=5,
                               textvariable=sb_var)
     item_spinbox.grid(row=i+1,
-                      column=1,
+                      column=2,
                       padx=20,
                       pady=5)
     
-    
+    ordered_items[item] = sb_var
+
+#Button to confirm order
+order_button = tk.Button(order_frame,
+                        text = "Add to cart",
+                        command = lambda:add_order(),
+                             )
+order_button.grid(row=len(menu_prices)+1,
+                    column=0,
+                    pady=20,
+                    padx=10)
 
 #Function to add orders
 def add_order():
-    cart.append(menu.spinbox.get())
+    global cart
+    cart = []
+    for item, var in ordered_items.items():
+        quantity = var.get()
+        if quantity > 0:
+            # Append item string name multiplied by quantity selected
+            cart.append(f"{item} x{quantity}")
+    
+    if len(cart) == 0:
+        return #If user has no orders to display, return them to the main_frame
+            
+    with open("order_number.txt", "r") as file:
+        order_number = int(file.read())
+                            
+    with open(f"{user_id}_order_{order_number}.txt", "x") as file:
+        file.write(f"---BDSC CAFE ORDER {order_number}---\n")
+        file.write(f"Student ID: {user_id}\n")
+        file.write(f"-----------------------\n")
+        file.write(f"Items Ordered:\n")
+        for item in cart:
+            file.write(f"- {item}\n")
+        file.write(f"Status: Preparing\n")
+        file.write(f"-----------------------\n\n")
+                            
+        order_number+=1
+        with open("order_number.txt", "w") as file:
+            file.write(str(order_number))
+            cart.clear()
+                
+                
+    
+    #After the ordering process has finished, the user returns to the home frame   
     show_frame(home_frame)
     
-'''#Variable for the selected food item to be stored to
-food_choice = tk.IntVar()
+#Home button
+orderhome_button = tk.Button(order_frame,
+                    text="\nRETURN HOME\n",
+                    command=lambda: show_frame(home_frame))
 
-order_instruction = tk.Label(order_frame,
-                             text = "Tick all the items you want to order!")
-order_instruction.grid(row = 0, column = 0, padx= 50, pady = 20)
+orderhome_button.grid(row=1,
+                column=3,
+                padx=20,
+                pady=20)
 
-chocolate_milk = tk.Radiobutton(order_frame,
-                                text="Chocolate milk",
-                                variable=food_choice,
-                                value=1)
-
-sausage_roll = tk.Radiobutton(order_frame,
-                              text="Sausage roll",
-                              variable=food_choice,
-                              value=2)
-
-brownie = tk.Radiobutton(order_frame,
-                         text="Brownie",
-                         variable=food_choice,
-                         value=3)
-
-chocolate_milk.grid(row=1,column=0)
-sausage_roll.grid(row=2,column=0)
-brownie.grid(row=3,column=0)
-
-order_button = tk.Button(order_frame,
-                         text = "Order",
-                         command = lambda: add_order)
-order_button.grid(row=4,column=0, padx= 50, pady = 20)
-
-#Add order function
-def add_order():
-
-    selected = food_choice.get()
-
-    if selected == 1:
-        cart.append("Chocolate milk")
-
-    elif selected == 2:
-        cart.append("Sausage roll")
-
-    elif selected == 3:
-        cart.append("Brownie")'''
-        
+    
 #Current order screen
 
-# Show welcome screen first
-show_frame(welcome_frame) 
+def view_current_orders():
+    #Set row number to 0
+    row_num = 0
 
-# Run the program
-root.mainloop()       
-            
-            
-        
-        
-
-"""
-#Main menu- Selecting option
-def main_menu():
-
-    print("\n--------MAIN MENU--------\n")
-    print("OPTIONS:")
-    print("1. Order Menu")
-    print("2. Current orders")
-    print("3. Exit")
-
-    while True:
-        try:
-            choice = int(input("Enter option (1/2/3) : "))
-            if choice == 1:
-                order_menu()
-            elif choice == 2:
-                current_orders()
-            elif choice == 3:
-                print("\n--------EXITING PROGRAM--------")
-                sys.exit()
-        except ValueError:
-            print("Invalid option")
-            
-        
-#Order menu - Place an order
-def order_menu():
-    global order_number
-    print("\n--------ORDER MENU--------")
-
-    for index, (item, price) in enumerate(menu_prices, start=1):
-        print(f"{index}. {item} : {price}")
-    while True:
-        try:
-            ordered_item = int(input("Enter number to order or type '0' to stop : "))
-        except ValueError:
-            print("Enter a valid menu number in integers")
-            continue
-        
-        if 1 <= ordered_item <= len(menu_prices):
-            
-            #Retrieves item name from the list by getting index number
-            item_name = menu_prices[ordered_item - 1]
-            cart.append(item_name)
-            print("Successfully added to cart!")
-            
-        elif ordered_item == 0:
-        
-            if len(cart) == 0:
-                main_menu()
-                break
-            else:
-                print("\nOrder processed!\n")
-                with open("order_number.txt", "r") as file:
-                    order_number = int(file.read())
-                    
-                with open(f"{user_id}_order_{order_number}.txt", "x") as file:
-                    file.write(f"---BDSC CAFE ORDER {order_number}---\n")
-                    file.write(f"Student ID: {user_id}\n")
-                    file.write(f"-----------------------\n")
-                    file.write(f"Items Ordered:\n")
-                    for item in cart:
-                        file.write(f"- {item}\n")
-                    file.write(f"-----------------------\n\n")
-                    
-                    order_number+=1
-                    with open("order_number.txt", "w") as file:
-                        file.write(str(order_number))
-                cart.clear()
-                
-            main_menu()
-            break
-            
-        else:
-            print("Enter a valid menu number in integers")        
-
-#Current orders functions
-def current_orders():
+    #Inititally, no previous orders were found for the user
+    orders_found = False
     
-    #Empty list for users previous orders
-    found_orders = []
-    
-    #Initially, previous orders are not found
-    order_found = False
-    
-    print("\n--------CURRENT ORDERS--------\n")
-    
+    show_frame(currentorder_frame)
+
+    #Reset current orders every time you open it 
+    for widget in currentorder_frame.winfo_children():
+        widget.destroy()
+        
+    #create home button
+    crntordhome_button = tk.Button(currentorder_frame,
+                            text="\nRETURN HOME\n",
+                            command=lambda: show_frame(home_frame))
+
+    crntordhome_button.grid(row=0,
+                     column=2,
+                     padx=20,
+                     pady=20)
+
     #Find any current orders for the user's id
     for file_name in os.listdir():
         if user_id in file_name:
             with open(file_name, "r") as file:
                 current_order = file.read()
-                found_orders.append(file_name)
-                print(current_order)
-            order_found = True
+                orders_found = True #User id has been found
+                
+            order_invoice = tk.Label(currentorder_frame,
+                                    text=current_order)
+            order_invoice.grid(row = row_num,
+                            column = 0,
+                            padx =20,
+                            pady=5,
+                            )
             
-    if order_found == False:
-        print("No current orders")
-            
-    else:
-        while True:
-            status = input("Have you recieved your order yet? (Y/N) : ").lower()
-            if status == "y":
-                print("Enjoy!")
-                for file_name in found_orders:
-                    os.remove(file_name)
-                break
-            if status == "n":
-                print("Your order will be ready soon!")
-                break
-            else:
-                print("Enter a valid status (Y/N)") 
-    main_menu()
+            completed_button = tk.Button(currentorder_frame,
+                                text="Mark as Completed",
+                                command=lambda file=file_name: remove_order(file)
+                                )
+            completed_button.grid(row=row_num,
+                                    column=1,
+                                    padx=20,
+                                    pady=5)
 
+            row_num += 1
 
-#Initial menu - Logging in
-def log_in():
-    global user_id
-    print("--------LOG IN--------")
-    while True:
-        entered_id = input("Enter student ID : ")
-        if entered_id not in login_keys:
-            print("ID not found")
-        else:
-            try:
-                entered_pin = int(input("Enter PIN : "))
-                if entered_pin == login_keys[entered_id]:
-                    user_id = entered_id
-                    print("--------SUCCESSFULLY LOGGING IN--------")
-                    main_menu()
-                    break
-                else:
-                    print("PIN OR ID IS INCORRECT")
-            except ValueError:
-                print("Enter a valid PIN in integers")
-log_in()
-"""
+#If no orders have been found
+        if orders_found == False:
+            no_orders_label = tk.Label(currentorder_frame,
+                                       text = "No orders to display",
+                                       )
+            no_orders_label.grid(row = 0,
+                                 column = 0,
+                                 padx=20,
+                                 pady=5)
+
+#Function to remove order from file
+def remove_order(file):
+    os.remove(file)
+    view_current_orders()
+
+# Show welcome screen first
+show_frame(welcome_frame) 
+
+# Run the program
+root.mainloop()               
