@@ -18,7 +18,8 @@ with open("student_data.txt","r")as file: #With open, (read = r)
             
 #List in list to contain menu price
 menu_prices = []
-#Import menu details from external file into dictionary
+
+#Import menu details from external file into list
 with open("cafe_menu.txt","r")as file: #With open, (read = r)
     for line in file:
         menu_item = []
@@ -26,10 +27,9 @@ with open("cafe_menu.txt","r")as file: #With open, (read = r)
         if line != "":
             item, price  = line.split(":")
             menu_item.append(item)
-            menu_item.append(price)
+            menu_item.append(int(price))
             menu_prices.append(menu_item)
-            
-            
+
 
 #Empty dictionary to store the ordered items
 ordered_items = {}
@@ -40,7 +40,7 @@ orders = []
 #Initialise tkinter window
 root = tk.Tk()
 root.title("BDSC cafe")
-root.geometry("500x300")
+root.geometry("550x300")
 
 #Show frame function
 def show_frame(frame):
@@ -52,6 +52,7 @@ login_frame = tk.Frame(root)
 home_frame = tk.Frame(root)
 order_frame = tk.Frame(root)
 currentorder_frame = tk.Frame(root)
+menugallery_frame = tk.Frame(root)###
 
 #Frame grids
 welcome_frame.grid(row=0, column=0, sticky="nsew")
@@ -59,8 +60,9 @@ login_frame.grid(row=0, column=0, sticky="nsew")
 home_frame.grid(row=0, column=0, sticky="nsew")
 order_frame.grid(row=0, column=0, sticky="nsew")
 currentorder_frame.grid(row=0, column=0, sticky="nsew")
+menugallery_frame.grid(row=0, column=0, sticky="nsew")
 
-#Welcome screen
+#---------------Welcome screen---------------
 title = tk.Label(welcome_frame,
                  text = "Welcome to the BDSC cafe app!")
 title.grid(row=0, column = 0, pady = 20, padx = 60)
@@ -73,7 +75,7 @@ login_button = tk.Button(welcome_frame,
                          command = lambda: show_frame(login_frame))
 login_button.grid(row = 2, column = 0, pady = 20, padx = 60)
 
-#Login screen
+#---------------Login screen---------------
 login_instruction = tk.Label(login_frame,
                              text = "Enter student ID and PIN",
                              font = ("Arial, 12"),
@@ -137,7 +139,20 @@ def verify_user():
 
         loginerror_message.set("Enter valid ID and PIN in integers")
         
-#Home screen
+#---------------Home screen---------------
+#Home image
+homeimage_path = "images/home_img.png"
+
+homephoto = tk.PhotoImage(file=homeimage_path)
+
+homeimage_label = tk.Label(home_frame,
+                           image=homephoto)
+
+homeimage_label.grid(row=0,
+                     column=1,
+                     rowspan=5,
+                     padx=30)
+
 #Successfully added order message
 success_message = tk.StringVar()
 
@@ -145,7 +160,7 @@ success_label = tk.Label(home_frame,
                          textvariable=success_message,
                          fg="green")
 
-success_label.grid(row=3,
+success_label.grid(row=4,
                    column=0,
                    pady=10)
 
@@ -162,12 +177,84 @@ currentorder_option = tk.Button(home_frame,
                          command = lambda: [view_current_orders(),
                          success_message.set("")]
                                 )
+gallery_option = tk.Button(home_frame,
+                           text="View Menu Gallery",
+                           command=lambda: [show_frame(menugallery_frame),
+                           success_message.set("")])
 
 home_message.grid(row=0, column=0, padx= 50, pady = 20)
 order_option.grid(row=1, column= 0, padx= 50, pady = 20)
 currentorder_option.grid(row=2, column=0 , padx= 50, pady = 20)
+gallery_option.grid(row=3, column=0 , padx= 50, pady = 20)
 
-#Order screen
+
+#---------------Menu gallery screen---------------
+
+#Gallery scrollbar
+#scrollbar canvas
+scroll_canvas = tk.Canvas(menugallery_frame,
+                          width=200)
+
+scroll_canvas.pack(side="left",
+                   fill="both",
+                   expand=True,)
+
+#Scrollbar syntax
+scrollbar = tk.Scrollbar(menugallery_frame,
+                orient="vertical",
+                command=scroll_canvas.yview) #.yview moves the canvas when scrollbar is dragged)
+#Place scrollbar on the right side
+scrollbar.pack(side="right",
+               fill="y")
+
+scroll_canvas.configure(yscrollcommand=scrollbar.set)
+
+#Frame to hold the scroll container
+gallery_frame = tk.Frame(scroll_canvas)
+
+gallery_frame.bind(
+    "<Configure>",
+    #bbox("all") gets the size of everything inside canvas
+    lambda e: scroll_canvas.configure(
+        scrollregion=scroll_canvas.bbox("all")
+    )
+)
+#Put the gallery frame into the canvas
+scroll_canvas.create_window((0,0),#(0,0) = top left corner
+                            window=gallery_frame,
+                            anchor="nw")#anchor="nw" means top-left alignment
+
+
+for i, image_file in enumerate(os.listdir("food_images")):
+    
+    image_path = f"food_images/{image_file}"
+    photo = tk.PhotoImage(file=image_path)
+    item_name = image_file.replace(".png", "")
+    item_label = tk.Label(gallery_frame,
+                          text=item_name) 
+    item_label.grid(row=i*2,
+                    column=0,
+                    padx=100,
+                    pady=20,)
+    image_label = tk.Label(gallery_frame,
+                           image=photo)
+    image_label.image = photo
+    image_label.grid(row=i*2+1,
+                     column=0)
+#Home button
+galleryhome_button = tk.Button(gallery_frame,
+                    text="\nRETURN HOME\n",
+                    command=lambda: show_frame(home_frame),
+                    )
+
+galleryhome_button.grid(row=1,
+                column=2,
+                padx=20,
+                pady=0,
+                      )
+
+
+#---------------Order screen---------------
 
 #Spinboxes for option selection
 
@@ -181,7 +268,8 @@ for i, (item, price) in enumerate(menu_prices):
                     pady=5,
                     )
     #Price labels
-    price_label = tk.Label(order_frame, text=price)
+    price_label = tk.Label(order_frame,
+                           text=f"${price}")
     price_label.grid(row=i+1,
                      column=1,
                      padx=10,
@@ -214,26 +302,34 @@ order_button.grid(row=len(menu_prices)+1,
 def add_order():
     global cart
     cart = []
+    total_price = 0
+    
     for item, var in ordered_items.items():
         quantity = var.get()
         if quantity > 0:
-            # Append item string name multiplied by quantity selected
+            #Append item string name multiplied by quantity selected
             cart.append(f"{item} x{quantity}")
-    
+            
+            #Add item prices multiplied by quantity
+            for menu_item, price in menu_prices:
+                if menu_item == item:
+                    total_price += price * quantity
+
     if len(cart) == 0:
         return #If user has no orders to display, return them to the main_frame
             
     with open("order_number.txt", "r") as file:
         order_number = int(file.read())
-                            
+        
     with open(f"{user_id}_order_{order_number}.txt", "x") as file:
         file.write(f"---BDSC CAFE ORDER {order_number}---\n")
         file.write(f"Student ID: {user_id}\n")
         file.write(f"-----------------------\n")
         file.write(f"Items Ordered:\n")
         for item in cart:
-            file.write(f"- {item}\n")
-        file.write(f"Status: Preparing\n")
+            file.write(f"- {item}\n")#This prints the items in the cart and the quantity
+        file.write(f"STATUS: Preparing\n")
+        file.write(f"TOTAL: ${total_price}\n")
         file.write(f"-----------------------\n\n")
         
         order_number+=1
@@ -261,66 +357,126 @@ orderhome_button.grid(row=2,
                       )
 
     
-#Current order screen
+#---------------Current order screen---------------
+
+#Current order Scrollbar
+#scrollbar canvas
+orderscroll_canvas = tk.Canvas(currentorder_frame,
+                            width=500)
+orderscroll_canvas.pack(side="left",
+                    fill="both",
+                    expand=True,)
+
+#Scrollbar syntax
+orderscrollbar = tk.Scrollbar(currentorder_frame,
+                orient="vertical",
+                command=orderscroll_canvas.yview) #.yview moves the canvas when scrollbar is dragged)
+#Place scrollbar on the right side
+orderscrollbar.pack(side="right",
+                fill="y")
+
+orderscroll_canvas.configure(yscrollcommand=orderscrollbar.set)
+
+#Frame to hold the scroll container
+current_frame = tk.Frame(orderscroll_canvas)
+
+current_frame.bind(
+    "<Configure>",
+    #bbox("all") gets the size of everything inside canvas
+    lambda e: orderscroll_canvas.configure(
+        scrollregion=orderscroll_canvas.bbox("all")
+    )
+)
+#Put the gallery frame into the canvas
+orderscroll_canvas.create_window((0,0),#(0,0) = top left corner
+                            window=current_frame,
+                            anchor="nw")#anchor="nw" means top-left alignment
 
 def view_current_orders():
     #Set row number to 0
     row_num = 0
 
-    #Inititally, no previous orders were found for the user
+    #Initially, no previous orders were found
     orders_found = False
     
     show_frame(currentorder_frame)
 
-    #Reset current orders every time you open it 
-    for widget in currentorder_frame.winfo_children():
+    #Clear old widgets INSIDE the scrolling frame
+    for widget in current_frame.winfo_children():
         widget.destroy()
-        
-    #create home button
-    crntordhome_button = tk.Button(currentorder_frame,
-                            text="\nRETURN HOME\n",
-                            command=lambda: show_frame(home_frame))
+
+    #Home button
+    crntordhome_button = tk.Button(
+        current_frame,
+        text="\nRETURN HOME\n",
+        command=lambda: show_frame(home_frame)
+    )
 
     crntordhome_button.grid(row=0,
-                     column=2,
-                     padx=20,
-                     pady=20)
-
-    #Find any current orders for the user's id
+                            column=3,
+                            padx=5,
+                            pady=20)
+    #Find current orders
     for file_name in os.listdir():
         if user_id in file_name:
+
             with open(file_name, "r") as file:
                 current_order = file.read()
-                orders_found = True #User id has been found
-                
-            order_invoice = tk.Label(currentorder_frame,
-                                    text=current_order)
-            order_invoice.grid(row = row_num,
-                            column = 0,
-                            padx =20,
-                            pady=5,
-                            )
-            
-            completed_button = tk.Button(currentorder_frame,
-                                text="Mark as Completed",
-                                command=lambda file=file_name: remove_order(file)
-                                )
+                orders_found = True
+
+            #Order invoice label
+            order_invoice = tk.Label(
+                current_frame,
+                text=current_order
+            )
+            order_invoice.grid(row=row_num,
+                               column=0,
+                               padx=10,
+                               pady=5)
+            #Status setup
+            status = ""
+
+            if "Preparing" in current_order:
+                status = "Preparing"
+                colour = "orange"
+
+            if "Ready" in current_order:
+                status = "Pick up now!"
+                colour = "green"
+            #Status label
+            status_label = tk.Label(
+                current_frame,
+                text=status,
+                fg=colour
+            )
+            status_label.grid(row=row_num,
+                              column=1,
+                              padx=2,
+                              pady=5)
+            #Completed button
+            completed_button = tk.Button(
+                current_frame,
+                text="Mark as Completed",
+                command=lambda file=file_name: remove_order(file)
+            )
             completed_button.grid(row=row_num,
-                                    column=1,
-                                    padx=20,
-                                    pady=5)
+                                  column=2,
+                                  padx=20,
+                                  pady=5)
 
             row_num += 1
+    #If no orders found
+    if orders_found == False:
 
-#If no orders have been found
-        if orders_found == False:
-            no_orders_label = tk.Label(currentorder_frame,
-                                       text = "No orders to display",
-                                       )
-            no_orders_label.grid(row = 0,
-                                 column = 0,
-                                 padx=20,
-                                 pady=5)
+        no_orders_label = tk.Label(
+            current_frame,
+            text="No orders to display"
+        )
+
+        no_orders_label.grid(row=0,
+                             column=0,
+                             padx=20,
+                             pady=5)
 
 #Function to remove order from file
 def remove_order(file):
@@ -331,4 +487,4 @@ def remove_order(file):
 show_frame(welcome_frame) 
 
 # Run the program
-root.mainloop()               
+root.mainloop()     
